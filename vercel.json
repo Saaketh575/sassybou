@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "functions": {
+    "api/generate-sass.ts": { "maxDuration": 30 },
+    "api/recent-sass.ts": { "maxDuration": 10 }
+  }
+}
