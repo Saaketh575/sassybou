@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SassBot - AI Sassy Message Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .sass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-4">SassBot</h1>
+            <p class="text-white/80 text-lg">Generate perfectly sassy messages for any situation</p>
+        </div>
+        
+        <div class="max-w-2xl mx-auto sass-card rounded-2xl p-8 shadow-2xl">
+            <form id="sassForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Context (optional)</label>
+                    <textarea 
+                        id="context" 
+                        class="w-full p-3 border rounded-lg resize-none"
+                        rows="3"
+                        placeholder="Tell me what you're responding to..."
+                    ></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-4">Sass Level</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="sassLevel" value="mild" class="sr-only">
+                            <div class="sass-option p-4 border-2 rounded-lg text-center hover:bg-blue-50 transition-colors" data-level="mild">
+                                <div class="text-2xl mb-2">😊</div>
+                                <div class="font-medium">Mild</div>
+                                <div class="text-sm text-gray-600">Gentle shade</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="sassLevel" value="medium" class="sr-only" checked>
+                            <div class="sass-option p-4 border-2 rounded-lg text-center hover:bg-orange-50 transition-colors border-orange-500 bg-orange-50" data-level="medium">
+                                <div class="text-2xl mb-2">😏</div>
+                                <div class="font-medium">Medium</div>
+                                <div class="text-sm text-gray-600">Balanced attitude</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="sassLevel" value="spicy" class="sr-only">
+                            <div class="sass-option p-4 border-2 rounded-lg text-center hover:bg-red-50 transition-colors" data-level="spicy">
+                                <div class="text-2xl mb-2">🔥</div>
+                                <div class="font-medium">Spicy</div>
+                                <div class="text-sm text-gray-600">Maximum sass</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <button 
+                    type="submit" 
+                    class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all"
+                >
+                    Generate Sassy Messages
+                </button>
+            </form>
+            
+            <div id="results" class="mt-8 space-y-4 hidden">
+                <h3 class="text-lg font-medium">Your Sassy Messages:</h3>
+                <div id="messagesList" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Handle sass level selection
+        document.querySelectorAll('.sass-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.sass-option').forEach(o => {
+                    o.classList.remove('border-blue-500', 'bg-blue-50', 'border-orange-500', 'bg-orange-50', 'border-red-500', 'bg-red-50');
+                    o.classList.add('border-gray-200');
+                });
+                
+                const level = option.dataset.level;
+                const colors = {
+                    mild: ['border-blue-500', 'bg-blue-50'],
+                    medium: ['border-orange-500', 'bg-orange-50'],
+                    spicy: ['border-red-500', 'bg-red-50']
+                };
+                
+                option.classList.remove('border-gray-200');
+                option.classList.add(...colors[level]);
+                
+                document.querySelector(`input[value="${level}"]`).checked = true;
+            });
+        });
+        // Handle form submission
+        document.getElementById('sassForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const context = document.getElementById('context').value;
+            const sassLevel = document.querySelector('input[name="sassLevel"]:checked').value;
+            const button = e.target.querySelector('button');
+            
+            button.textContent = 'Generating...';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch('/api/generate-sass', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ context, sassLevel })
+                });
+                
+                const data = await response.json();
+                displayResults(data.messages);
+            } catch (error) {
+                alert('Error generating messages. Please try again.');
+            } finally {
+                button.textContent = 'Generate Sassy Messages';
+                button.disabled = false;
+            }
+        });
+        function displayResults(messages) {
+            const resultsDiv = document.getElementById('results');
+            const messagesList = document.getElementById('messagesList');
+            
+            messagesList.innerHTML = messages.map(msg => `
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex justify-between items-start">
+                        <p class="text-gray-800 flex-1">"${msg.text}"</p>
+                        <button 
+                            onclick="copyToClipboard('${msg.text.replace(/'/g, "\\'")}', this)"
+                            class="ml-3 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        >
+                            Copy
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">
+                        ${msg.characterCount} characters • ${msg.sassLevel} sass
+                    </div>
+                </div>
+            `).join('');
+            
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('bg-green-600');
+                setTimeout(() => {
+                    button.textContent = original;
+                    button.classList.remove('bg-green-600');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
