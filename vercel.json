@@ -1,7 +1,8 @@
 {
-  "version": 2,
-  "functions": {
-    "api/generate-sass.ts": { "maxDuration": 30 },
-    "api/recent-sass.ts": { "maxDuration": 10 }
+  "name": "sassbot",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'Build complete'"
   }
 }
